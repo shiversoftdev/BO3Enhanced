@@ -1,0 +1,16 @@
+Algorithm       Hash                                                                   Path                                               
+---------       ----                                                                   ----                                               
+SHA256          B1A06F7AA52439A948A152BFD3301D9B595C78969BB77C9741BBA935139F58A0       C:\XboxGames\BO3_DUMP\d3dcompiler_46.dll           
+SHA256          5928D471AB873240BD4AA923272A442C1252E4F735A5814DCE83A6AA7FC06EEB       C:\XboxGames\BO3_DUMP\GameChat2.dll                
+SHA256          9FEF0708CE651B6D54CDF382A954351C69B8902D3B6C2DEDCE57AD4D48DB9727       C:\XboxGames\BO3_DUMP\libScePad.dll                
+SHA256          83BC60354D2053B336FA4D74C5050AD60DBC08AB81F7BFCB052D5A2F63A0BC26       C:\XboxGames\BO3_DUMP\Party.dll                    
+SHA256          77912F78F332609B9EDC43A9FC003BAA49D86A044E9E65F74B5CD239000734AD       C:\XboxGames\BO3_DUMP\PartyXboxLive.dll            
+SHA256          43CA9DBD87135BEEC3500CCEB93B8BB8EC2061F816203347940F5B3E29EEEE1B       C:\XboxGames\BO3_DUMP\PlayFabMultiplayerGDK.dll           
+SHA256          65CD27B336ABECF821896611C91E8EC74D0328BD65EC11AA5EF4E2AFFBDD4551       C:\XboxGames\BO3_DUMP\XCurl.dll                    
+
+
+
+Algorithm       Hash                                                                   Path                                               
+---------       ----                                                                   ----                                               
+SHA256          72C8A21763ADBFAC9E1B2BCD6F93B05ECF437610E16430D99A1680EA0F827C17       C:\XboxGames\BO3_DUMP\BlackOps3.exe                
+SHA256          3D39A3FB9E4C0D18BF0982AFCCAEA67F1D5A32AC5A228C47E382ADBF75095FC9       C:\XboxGames\BO3_DUMP\gamelaunchhelper.exe  
