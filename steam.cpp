@@ -6,6 +6,7 @@
 #include "security.h"
 #include <unordered_map>
 #include <intrin.h>
+#include <direct.h>
 
 enum SteamAuthStatus
 {
@@ -525,6 +526,15 @@ MDT_Define_FASTCALL(REBASE(0x1EEDBE0), ShowPlatformProfile_hook, void, (XUID xui
 	SteamFriends()->ActivateGameOverlayToUser("steamid", CSteamID(xuid));
 }
 
+MDT_Define_FASTCALL(REBASE(0x292049C), XGameSaveFilesGetFolderWithUiResult_hook, uint64_t, (uint64_t a1, size_t folderSize, char* result))
+{
+	if (!_getcwd(result, folderSize))
+	{
+		return MDT_ORIGINAL(XGameSaveFilesGetFolderWithUiResult_hook, (a1, folderSize, result));
+	}
+	return 0;
+}
+
 void init_steamapi()
 {
 	SetEnvironmentVariableA("SteamAppId", "311210");
@@ -552,6 +562,7 @@ void init_steamapi()
 	// activate hooks for user info
 	MDT_Activate(XalUserGetId_hook);
 	MDT_Activate(XalUserGetGamertag_hook);
+	MDT_Activate(XGameSaveFilesGetFolderWithUiResult_hook);
 
 	// activate hooks for achievements
 	MDT_Activate(Live_AwardAchievement_Hook);
