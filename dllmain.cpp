@@ -1283,6 +1283,11 @@ MDT_Define_FASTCALL(REBASE(0x1F009E0), Live_SystemInfo_Hook, bool, (int controll
     return true;
 }
 
+MDT_Define_FASTCALL(REBASE(0x291F620), Content_HasEntitlementOwnershipByRef_hook, uint8_t, ())
+{
+    return 1;
+}
+
 //defined in steam.cpp
 extern void init_steamapi();
 
@@ -1311,6 +1316,7 @@ void add_prehooks()
     MDT_Activate(set_mod_super_hook);
     MDT_Activate(Dvar_Callback_ModChanged_hook);
     MDT_Activate(Live_SystemInfo_Hook);
+    MDT_Activate(Content_HasEntitlementOwnershipByRef_hook);
 
     // testing stuff
 #if BADWORD_BYPASS
