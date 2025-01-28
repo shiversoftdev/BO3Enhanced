@@ -1389,6 +1389,10 @@ void add_prehooks()
     // more offensiveness filter stuff
     chgmem<uint16_t>(REBASE(0x2F69AA8), 0xFF69);
 #endif
+
+    // work around mutex crash in xbox curl code by making it a recursive lock
+    char mutexPatch[] = { 0xBA, 0x02, 0x01, 0x00, 0x00, 0xE8, 0x8A, 0x2F, 0xF8, 0xFF };
+    chgmem(REBASE(0x2D7AAB2), sizeof(mutexPatch), mutexPatch);
 }
 
 void add_hooks()
