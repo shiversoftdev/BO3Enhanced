@@ -99,7 +99,7 @@ MDT_Define_FASTCALL(REBASE(0x14F6710), dwInstantDispatchMessage_Internal_hook, b
                         break; // local
                     }
   
-                    if (IsFriendByXUIDUncached(senderID))
+                    if (!gSteamInit || IsFriendByXUIDUncached(senderID))
                     {
                         break; // friend :)
                     }
