@@ -1396,6 +1396,10 @@ void add_prehooks()
 
     // stub microphone enumeration
     chgmem<uint8_t>(REBASE(0x1EEA680), 0xC3);
+
+    // fix multiplayer dedicated server searches
+    chgmem<uint8_t>(REBASE(0x1FEAB49 + 2), 0); // lobbyDedicatedSearchSkip: 1 -> 0
+    chgmem<uint32_t>(REBASE(0x1FDE201) + 6, 0xD3FC12u); // changelist in LobbyHostMsg_SendJoinRequest -> steam changelist
 }
 
 void add_hooks()
@@ -1425,6 +1429,8 @@ void add_hooks()
     Dvar_SetFromStringByName("ui_error_callstack_ship", "1", true);
     Dvar_SetFromStringByName("loot_enabled", "1", true);
 
+    // Dvar_SetFromStringByName("ui_lobbydebugvis", "3", true);
+
     // anticheat related import caches
     /*dumpa_da_anticheats(REBASE(0x1A122AD8), (0x1A122C88 - 0x1A122AD8) / 8);
     dumpa_da_anticheats(REBASE(0x1A122D20), (0x1A122D50 - 0x1A122D20) / 8);
@@ -1446,6 +1452,22 @@ DWORD WINAPI watch_ready_inject(_In_ LPVOID lpParameter)
     }
 
     add_hooks();
+
+    /*for (;;)
+    {
+        if (GetAsyncKeyState(VK_OEM_3) & 0x8000)
+        {
+            Cbuf_AddText("statwritemode mp playerstatslist plevel statvalue 10\n");
+            Cbuf_AddText("statwritemode mp playerstatslist plevel challengevalue 10\n");
+            Cbuf_AddText("statwritemode mp playerstatslist rankxp statvalue 1457200\n");
+            Cbuf_AddText("statwritemode mp playerstatslist rankxp challengevalue 1457200\n");
+            Cbuf_AddText("statwritemode mp playerstatslist rank statvalue 54\n");
+            Cbuf_AddText("statwritemode mp playerstatslist rank challengevalue 54\n");
+            Cbuf_AddText("uploadstats\n");
+        }
+        Sleep(1000);
+    }*/
+
     return 0;
 }
 

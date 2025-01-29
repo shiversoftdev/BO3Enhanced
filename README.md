@@ -2,6 +2,8 @@
 
 [BO3Enhanced](https://github.com/shiversoftdev/BO3Enhanced/releases/tag/Current) is a mod for the Windows Store edition of Black Ops 3 that allows you to crossplay with Steam and use the Steam game files.
 
+**You must own the Steam version of the game to connect online!**
+
 This version of Black Ops 3 has **massively improved performance**, allowing for 200+ fps stable with much faster boot times, and is overall easier to work with for mod developers due to the lack of Arxan DRM. Additionally, this project **completely disables Treyarch Anticheat**, allowing you to debug the game in x64dbg.
 
 Download: https://github.com/shiversoftdev/BO3Enhanced/releases/tag/Current
