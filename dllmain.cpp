@@ -1400,6 +1400,9 @@ void add_prehooks()
     // fix multiplayer dedicated server searches
     chgmem<uint8_t>(REBASE(0x1FEAB49 + 2), 0); // lobbyDedicatedSearchSkip: 1 -> 0
     chgmem<uint32_t>(REBASE(0x1FDE201) + 6, 0xD3FC12u); // changelist in LobbyHostMsg_SendJoinRequest -> steam changelist
+
+    // stub XPackageEnumeratePackages
+    chgmem<uint8_t>(REBASE(0x2920B70), 0xC3);
 }
 
 void add_hooks()
