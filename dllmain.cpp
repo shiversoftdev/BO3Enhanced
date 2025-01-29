@@ -1394,6 +1394,9 @@ void add_prehooks()
     char mutexPatch[] = { 0xBA, 0x02, 0x01, 0x00, 0x00, 0xE8, 0x8A, 0x2F, 0xF8, 0xFF };
     chgmem(REBASE(0x2D7AAB2), sizeof(mutexPatch), mutexPatch);
 
+    // stub microphone enumeration
+    chgmem<uint8_t>(REBASE(0x1EEA680), 0xC3);
+
     // fix multiplayer dedicated server searches
     chgmem<uint8_t>(REBASE(0x1FEAB49 + 2), 0); // lobbyDedicatedSearchSkip: 1 -> 0
     chgmem<uint32_t>(REBASE(0x1FDE201) + 6, 0xD3FC12u); // changelist in LobbyHostMsg_SendJoinRequest -> steam changelist

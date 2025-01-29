@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include "PicoSHA2.h"
 #include <filesystem>
+#include "hks.h"
 
 struct workshop_json
 {
@@ -360,7 +361,89 @@ MDT_Define_FASTCALL(REBASE(0x21EF320), populate_ugc_list_hook, void, (uint64_t a
 	MDT_ORIGINAL(populate_ugc_list_hook, (a1, a2));
 }
 
+int __cdecl Lua_CoD_LuaCall_Mods_IsSubscribedItem(lua_State* luaVM)
+{
+	auto idStr = lua_tostring(luaVM, 1);
+	PublishedFileId_t id = strtoull(idStr, nullptr, 10);
+
+	// steam version calls GetSubscribedItems and loops over it
+	lua_pushboolean(luaVM, SteamUGC()->GetItemState(id) & k_EItemStateSubscribed);
+	return 1;
+}
+
+int __cdecl Lua_CoD_LuaCall_Mods_SubscribeUGC(lua_State* luaVM)
+{
+	auto idStr = lua_tostring(luaVM, 1);
+	PublishedFileId_t id = strtoull(idStr, nullptr, 10);
+
+	// steam version calls this twice for some reason
+	if (id)
+	{
+		SteamUGC()->SubscribeItem(id);
+		lua_pushboolean(luaVM, true);
+	}
+	else
+	{
+		lua_pushboolean(luaVM, false);
+	}
+	return 1;
+}
+
+float steam_install_progress(PublishedFileId_t id)
+{
+	auto itemState = SteamUGC()->GetItemState(id);
+	nlog("steam_install_progress: itemState = 0x%X", itemState);
+
+	/*
+	// steam version does this but this feels like a mistake
+	if ((itemState & k_EItemStateInstalled) == 0)
+	{
+		return 0.0f;
+	}
+	*/
+	if ((itemState & (k_EItemStateDownloadPending | k_EItemStateDownloading | k_EItemStateNeedsUpdate)) == 0)
+	{
+		return 1.0f;
+	}
+
+	uint64 cur = 0;
+	uint64 total = 0;
+	if (!SteamUGC()->GetItemDownloadInfo(id, &cur, &total) || (itemState & k_EItemStateDownloading) == 0 || !total)
+	{
+		nlog("steam_install_progress: not downloading yet");
+		return 0.0f;
+	}
+	nlog("steam_install_progress: cur = %llu, total = %llu", cur, total);
+
+	// try to avoid precision loss from larger mods
+	return (float)((double)cur / total);
+}
+
+int __cdecl Lua_CoD_LuaCall_Mods_InstallProgressUGC(lua_State* luaVM)
+{
+	auto idStr = lua_tostring(luaVM, 1);
+	PublishedFileId_t id = strtoull(idStr, nullptr, 10);
+
+	float progress = steam_install_progress(id);
+	nlog("Mods_InstallProgressUGC: progress = %f", progress);
+	lua_pushnumber(luaVM, progress);
+	return 1;
+}
+
+int __cdecl Lua_CoD_LuaCall_Mods_InstalledUGC(lua_State* luaVM)
+{
+	auto idStr = lua_tostring(luaVM, 1);
+	PublishedFileId_t id = strtoull(idStr, nullptr, 10);
+
+	lua_pushboolean(luaVM, (SteamUGC()->GetItemState(id) & k_EItemStateInstalled) && !(SteamUGC()->GetItemState(id) & (k_EItemStateDownloadPending | k_EItemStateDownloading | k_EItemStateNeedsUpdate)));
+	return 1;
+}
+
 void steamugc::setup()
 {
 	MDT_Activate(populate_ugc_list_hook);
+	// chgmem<void*>(REBASE(0x336F020), &Lua_CoD_LuaCall_Mods_IsSubscribedItem);
+	// chgmem<void*>(REBASE(0x336DCE0), &Lua_CoD_LuaCall_Mods_SubscribeUGC);
+	// chgmem<void*>(REBASE(0x336E900), &Lua_CoD_LuaCall_Mods_InstallProgressUGC);
+	// chgmem<void*>(REBASE(0x336E0A0), &Lua_CoD_LuaCall_Mods_InstalledUGC);
 }
