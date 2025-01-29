@@ -442,8 +442,8 @@ int __cdecl Lua_CoD_LuaCall_Mods_InstalledUGC(lua_State* luaVM)
 void steamugc::setup()
 {
 	MDT_Activate(populate_ugc_list_hook);
-	chgmem<void*>(REBASE(0x336F020), &Lua_CoD_LuaCall_Mods_IsSubscribedItem);
-	chgmem<void*>(REBASE(0x336DCE0), &Lua_CoD_LuaCall_Mods_SubscribeUGC);
-	chgmem<void*>(REBASE(0x336E900), &Lua_CoD_LuaCall_Mods_InstallProgressUGC);
-	chgmem<void*>(REBASE(0x336E0A0), &Lua_CoD_LuaCall_Mods_InstalledUGC);
+	// chgmem<void*>(REBASE(0x336F020), &Lua_CoD_LuaCall_Mods_IsSubscribedItem);
+	// chgmem<void*>(REBASE(0x336DCE0), &Lua_CoD_LuaCall_Mods_SubscribeUGC);
+	// chgmem<void*>(REBASE(0x336E900), &Lua_CoD_LuaCall_Mods_InstallProgressUGC);
+	// chgmem<void*>(REBASE(0x336E0A0), &Lua_CoD_LuaCall_Mods_InstalledUGC);
 }
