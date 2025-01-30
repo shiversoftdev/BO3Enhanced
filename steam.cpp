@@ -595,4 +595,8 @@ void init_steamapi()
 
 	// create a default lobby for invite purposes
 	SteamMatchmaking()->CreateLobby(k_ELobbyTypePublic, 18);
+
+	// fix multiplayer dedicated server searches
+	chgmem<uint8_t>(REBASE(0x1FEAB49 + 2), 0); // lobbyDedicatedSearchSkip: 1 -> 0
+	chgmem<uint32_t>(REBASE(0x1FDE201) + 6, 0xD3FC12u); // changelist in LobbyHostMsg_SendJoinRequest -> steam changelist
 }

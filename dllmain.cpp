@@ -11,16 +11,10 @@
 #include "steam.h"
 #endif
 #include "security.h"
-
-// TODO(anthony): credits ssno (TAC research)
-// TODO(anthony): repository rebase, cleanup, and readme for v1.0
-// -- mention that friends list and game chat do not work
-// TODO(anthony): record tutorial video for setting it up from scratch, including how to get the windows store exe files needed
+#include <direct.h>
 
 // FUTURE MAYBE: steamchat (requires steamlobbies)
 // FUTURE MAYBE: friends list
-// FUTURE MAYBE(anthony): fix mic being set to 0%
-
 
 HMODULE __thismodule;
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved);
@@ -1288,6 +1282,36 @@ MDT_Define_FASTCALL(REBASE(0x291F620), Content_HasEntitlementOwnershipByRef_hook
     return 1;
 }
 
+// if found in current directory, use cd *first* instead of having the xbox override paths first
+MDT_Define_FASTCALL(REBASE(0x1EED4E0), FS_FindXZone_hook, const char*, (const char* filename))
+{
+    static char cd[MAX_PATH]{ 0 };
+    static char file[MAX_PATH]{ 0 };
+
+    memset(cd, 0, sizeof(cd));
+    memset(file, 0, sizeof(file));
+
+    if (!_getcwd(cd, MAX_PATH))
+    {
+        return MDT_ORIGINAL(FS_FindXZone_hook, (filename));
+    }
+
+    strcat_s(cd, "/zone");
+    sprintf_s(file, "%s/%s", cd, filename);
+
+    if (std::filesystem::exists(file))
+    {
+        return cd;
+    }
+
+    return MDT_ORIGINAL(FS_FindXZone_hook, (filename));
+}
+
+MDT_Define_FASTCALL(REBASE(0x1FA17D0), LiveStats_AreStatsDeltasValid_hook, uint8_t, ())
+{
+    return 1;
+}
+
 //defined in steam.cpp
 extern void init_steamapi();
 
@@ -1317,6 +1341,8 @@ void add_prehooks()
     MDT_Activate(Dvar_Callback_ModChanged_hook);
     MDT_Activate(Live_SystemInfo_Hook);
     MDT_Activate(Content_HasEntitlementOwnershipByRef_hook);
+    MDT_Activate(FS_FindXZone_hook);
+    MDT_Activate(LiveStats_AreStatsDeltasValid_hook);
 
     // testing stuff
 #if BADWORD_BYPASS
@@ -1367,7 +1393,6 @@ void add_prehooks()
 
     DetourTransactionCommit();
 
-
     chgmem<uint32_t>(REBASE(0x21F09C0 + 2), 0); // wipe flags of mods_enabled
 
     // nop out all the calls in the start of Mods_LoadModStart
@@ -1396,10 +1421,6 @@ void add_prehooks()
 
     // stub microphone enumeration
     chgmem<uint8_t>(REBASE(0x1EEA680), 0xC3);
-
-    // fix multiplayer dedicated server searches
-    chgmem<uint8_t>(REBASE(0x1FEAB49 + 2), 0); // lobbyDedicatedSearchSkip: 1 -> 0
-    chgmem<uint32_t>(REBASE(0x1FDE201) + 6, 0xD3FC12u); // changelist in LobbyHostMsg_SendJoinRequest -> steam changelist
 }
 
 void add_hooks()
@@ -1412,9 +1433,6 @@ void add_hooks()
     security::init_delayed();
 
     DetourTransactionCommit();
-
-
-
 
     spoof_ownscontent();
 
