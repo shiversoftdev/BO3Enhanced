@@ -9,7 +9,7 @@
 #define VERSION_STRING "BO3Enhanced v1.07"
 
 // If true, is development environment (printing, console, etc)
-#define IS_DEVELOPMENT 1
+#define IS_DEVELOPMENT 0
 
 // If true, enables the steamapi
 #define ENABLE_STEAMAPI 1
