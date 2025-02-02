@@ -1071,12 +1071,55 @@ MDT_Define_FASTCALL(REBASE(0x7BBF0), anticheat_unk11_hook, void, ())
 MDT_Define_FASTCALL(REBASE(0x1E54EF0), lua_pcall_hook, uint32_t, (lua_State* s, uint32_t nargs, uint32_t nresults, uint32_t errfunc))
 {
     auto res = MDT_ORIGINAL(lua_pcall_hook, (s, nargs, nresults, errfunc));
-
-    if ((uint64_t)_ReturnAddress() == REBASE(0x202C560))
+    
+    const char* sourceData = NULL;
+    if ((uint64_t)_ReturnAddress() == REBASE(0x202C560)) // ui.uieditor.conditions
     {
-        const char* sourceData = 
+        sourceData = 
 "EnableGlobals()\n\
-function IsServerBrowserEnabled() return false end";
+function IsServerBrowserEnabled() return false end\n\
+Engine.IsWeaponOptionLockedEntitlement = function() return false end\n\
+local defaultEmblemsCached = nil\n\
+local function getAllDefaults()\n\
+if defaultEmblemsCached ~= nil then return defaultEmblemsCached end\n\
+local tbl = {}\n\
+for i = 0, 750, 1 do\n\
+local desc = Engine.TableLookupGetColumnValueForRow( \"gamedata/emblems/backgrounds.csv\", i, 4 )\n\
+if Engine.TableLookupGetColumnValueForRow( \"gamedata/emblems/backgrounds.csv\", i, 9 ) == \"default\" and \"EM_BACK_CWL_default\" ~= desc then\n\
+local curTbl = {}\n\
+curTbl.id = i\n\
+curTbl.description = Engine.Localize(desc)\n\
+curTbl.isBGLocked = false\n\
+curTbl.entitlement = nil\n\
+curTbl.isContractBg = false\n\
+table.insert(tbl, curTbl)\n\
+end\n\
+end\n\
+defaultEmblemsCached = tbl\n\
+return tbl\n\
+end\n\
+local oldGBFCN = Engine.GetBackgroundsForCategoryName\n\
+Engine.GetBackgroundsForCategoryName = function(arg0, arg1)\n\
+if arg1 == \"default\" then\n\
+return getAllDefaults()\n\
+end\n\
+return oldGBFCN(arg0, arg1)\n\
+end";
+    }
+
+    if ((uint64_t)_ReturnAddress() == REBASE(0x202CB5F)) // ui.ffotd_tu32
+    {
+        sourceData =
+            "EnableGlobals()\n\
+require(\"ui.t7.utility.storeutility\")\n\
+CoD.BlackMarketUtility.IsItemLocked = function() return false end\n\
+CoD.StoreUtility.IsInventoryItemPurchased = function return true end\n\
+CoD.StoreUtility.IsInventoryItemVisible = function return true end\n\
+CoD.SpecialCallingCards = {}";
+    }
+
+    if (sourceData)
+    {
         *(char*)(*(uint64_t*)((uint64_t)s + 16) + 472) = HKS_BYTECODE_SHARING_ON;
         HksCompilerSettings hks_compiler_settings;
         int result = hksi_hksL_loadbuffer(s, &hks_compiler_settings, sourceData, strlen(sourceData), sourceData);
@@ -1446,6 +1489,8 @@ void add_hooks()
 
     Dvar_SetFromStringByName("ui_error_callstack_ship", "1", true);
     Dvar_SetFromStringByName("loot_enabled", "1", true);
+    Dvar_SetFromStringByName("ui_allLootUnlocked", "1", true);
+    Dvar_SetFromStringByName("loot_unlockUnreleasedLoot", "1", true);
 
     // Dvar_SetFromStringByName("ui_lobbydebugvis", "3", true);
 
