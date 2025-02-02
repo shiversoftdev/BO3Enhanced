@@ -1075,6 +1075,7 @@ MDT_Define_FASTCALL(REBASE(0x1E54EF0), lua_pcall_hook, uint32_t, (lua_State* s, 
     const char* sourceData = NULL;
     if ((uint64_t)_ReturnAddress() == REBASE(0x202C560)) // ui.uieditor.conditions
     {
+#if DWINVENTORY_UNLOCK_ALL
         sourceData = 
 "EnableGlobals()\n\
 function IsServerBrowserEnabled() return false end\n\
@@ -1105,8 +1106,13 @@ return getAllDefaults()\n\
 end\n\
 return oldGBFCN(arg0, arg1)\n\
 end";
+#else
+        sourceData = "EnableGlobals()\n\
+function IsServerBrowserEnabled() return false end";
+#endif
     }
 
+#if DWINVENTORY_UNLOCK_ALL
     if ((uint64_t)_ReturnAddress() == REBASE(0x202CB5F)) // ui.ffotd_tu32
     {
         sourceData =
@@ -1117,6 +1123,7 @@ CoD.StoreUtility.IsInventoryItemPurchased = function return true end\n\
 CoD.StoreUtility.IsInventoryItemVisible = function return true end\n\
 CoD.SpecialCallingCards = {}";
     }
+#endif
 
     if (sourceData)
     {
@@ -1391,9 +1398,6 @@ void add_prehooks()
 #if BADWORD_BYPASS
     MDT_Activate(UI_ValidateText_hook);
     MDT_Activate(UI_IsBadWord_hook);
-#endif
-#if DWINVENTORY_UNLOCK_ALL
-    MDT_Activate(Loot_GetInventoryItem_hook);
 #endif
 #if LOG_DEMONWARE
     MDT_Activate(bdLogMessage_hook);
