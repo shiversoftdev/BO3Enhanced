@@ -1494,7 +1494,10 @@ void add_hooks()
     Dvar_SetFromStringByName("ui_error_callstack_ship", "1", true);
     Dvar_SetFromStringByName("loot_enabled", "1", true);
     Dvar_SetFromStringByName("ui_allLootUnlocked", "1", true);
+
+#if DWINVENTORY_UNLOCK_ALL
     Dvar_SetFromStringByName("loot_unlockUnreleasedLoot", "1", true);
+#endif
 
     // Dvar_SetFromStringByName("ui_lobbydebugvis", "3", true);
 
