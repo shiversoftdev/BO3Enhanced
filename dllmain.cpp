@@ -889,7 +889,8 @@ MDT_Define_FASTCALL(REBASE(0x26D73E0), Demo_SaveScreenshotToContentServer_hook, 
     if (custom_thumb_buf) // Thumbnails are a resolution of 426x240 and smaller than 0x88000 bytes
     {
         ALOG("Uploading custom thumbnail...");
-        memcpy(reinterpret_cast<LPVOID>((*(uint64_t*)REBASE(0x9ABF730)) + 0x5A84A0), custom_thumb_buf, custom_thumb_buf_size);
+        LPVOID destination = (LPVOID)((*(uint64_t*)REBASE(0x9ABF730)) + 0x5A84A0);
+        memcpy(destination, custom_thumb_buf, custom_thumb_buf_size);
         *(uint32_t*)(*(uint64_t*)REBASE(0x9ABF730) + 0x5A849C) = custom_thumb_buf_size;
     }
 
