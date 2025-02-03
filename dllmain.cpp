@@ -881,7 +881,7 @@ MDT_Define_FASTCALL(REBASE(0x26D73E0), Demo_SaveScreenshotToContentServer_hook, 
 
     if (custom_jpg_buf)
     {
-        ALOG("Uploading custom screenshot...");
+        ALOG("Uploading custom screenshot..");
         *(uint64_t*)(*(uint64_t*)REBASE(0x9ABF730) + 0x5A8490) = (uint64_t)custom_jpg_buf;
         *(uint32_t*)(*(uint64_t*)REBASE(0x9ABF730) + 0x5A8498) = custom_jpg_buf_size;
     }
