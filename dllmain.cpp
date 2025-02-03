@@ -845,19 +845,19 @@ MDT_Define_FASTCALL(REBASE(0x1492A50), UI_IsBadWord_hook, int, ())
 
 char* custom_jpg_buf = NULL;
 uint32_t custom_jpg_buf_size = 0;
+char* custom_thumb_buf = NULL;
+uint32_t custom_thumb_buf_size = 0;
 
-void load_custom_jpg()
+void load_custom_image(const std::string& filename, char*& buffer, uint32_t& buffer_size)
 {
-    if (custom_jpg_buf)
+    if (buffer)
     {
-        delete[] custom_jpg_buf;
-        custom_jpg_buf = NULL;
-        custom_jpg_buf_size = 0;
+        delete[] buffer;
+        buffer = NULL;
+        buffer_size = 0;
     }
 
-    std::ifstream ifs;
-    ifs.open("screenshot.jpg", std::ifstream::in | std::ifstream::binary);
-
+    std::ifstream ifs(filename, std::ifstream::in | std::ifstream::binary);
     if (!ifs.is_open())
     {
         return;
@@ -867,16 +867,17 @@ void load_custom_jpg()
     size_t fileSize = ifs.tellg();
     ifs.seekg(0, std::ios::beg);
 
-    custom_jpg_buf_size = (uint32_t)fileSize;
-    custom_jpg_buf = new char[(uint32_t)fileSize];
-    ifs.read(custom_jpg_buf, (uint32_t)fileSize);
+    buffer_size = static_cast<uint32_t>(fileSize);
+    buffer = new char[buffer_size];
+    ifs.read(buffer, buffer_size);
 
     ifs.close();
 }
 
 MDT_Define_FASTCALL(REBASE(0x26D73E0), Demo_SaveScreenshotToContentServer_hook, void, (uint32_t localClientNum, int fileSlot))
 {
-    load_custom_jpg();
+    load_custom_image("screenshot.jpg", custom_jpg_buf, custom_jpg_buf_size);
+    load_custom_image("thumbnail.jpg", custom_thumb_buf, custom_thumb_buf_size);
 
     if (custom_jpg_buf)
     {
@@ -884,7 +885,15 @@ MDT_Define_FASTCALL(REBASE(0x26D73E0), Demo_SaveScreenshotToContentServer_hook, 
         *(uint64_t*)(*(uint64_t*)REBASE(0x9ABF730) + 0x5A8490) = (uint64_t)custom_jpg_buf;
         *(uint32_t*)(*(uint64_t*)REBASE(0x9ABF730) + 0x5A8498) = custom_jpg_buf_size;
     }
-    
+
+    if (custom_thumb_buf) // Thumbnails are a resolution of 426x240 and smaller than 0x88000 bytes
+    {
+        ALOG("Uploading custom thumbnail...");
+        LPVOID destination = (LPVOID)((*(uint64_t*)REBASE(0x9ABF730)) + 0x5A84A0);
+        memcpy(destination, custom_thumb_buf, custom_thumb_buf_size);
+        *(uint32_t*)(*(uint64_t*)REBASE(0x9ABF730) + 0x5A849C) = custom_thumb_buf_size;
+    }
+
     MDT_ORIGINAL(Demo_SaveScreenshotToContentServer_hook, (localClientNum, fileSlot));
 }
 
