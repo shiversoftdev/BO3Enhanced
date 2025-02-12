@@ -6,6 +6,7 @@
 #include "hks.h"
 #include "pe.h"
 #include "MemoryModule.h"
+#include "scePadEnhancements.h"
 
 #if ENABLE_STEAMAPI
 #include "steam.h"
@@ -1425,6 +1426,7 @@ void add_prehooks()
 
     // chgmem<uint8_t>(REBASE(0x20d7d3c), 0x01); ban me!!
 
+    apply_scePad_enhancements();
     ac_bypass_allocconsole();
     kill_gamechat();
     patch_lua();

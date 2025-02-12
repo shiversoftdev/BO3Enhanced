@@ -29,12 +29,13 @@ Download: https://github.com/shiversoftdev/BO3Enhanced/releases/tag/Current
 - [Emma / IPG](https://github.com/InvoxiPlayGames) - Project Developer
 - [Anthony / serious](https://github.com/shiversoftdev) - Project Developer
 - [ssno](https://github.com/ssnob) - TAC research and assistance with several components of the project
+- [Contributors on GitHub](https://github.com/shiversoftdev/BO3Enhanced/graphs/contributors) - misc fixes and features, thanks!
 
 ## Build From Source
 - Requires VS 2022 and Desktop C++ components (v143)
 1. `git clone https://github.com/shiversoftdev/BO3Enhanced.git`
-2. Acquire the [Steamworks SDK](https://partner.steamgames.com/?goto=%2Fdownloads%2Flist) and copy the 'steam' folder from 'your/sdk/folder/public' into the project directory
+2. Acquire the latest [Steamworks SDK](https://partner.steamgames.com/?goto=%2Fdownloads%2Flist) and copy the 'steam' folder from 'your/sdk/folder/public' into the project directory
 3. In `framework.h`, edit the `IS_DEVELOPMENT` macro to be `1` to skip the update checking logic.
 4. Build the Release x64 configuration. Output will be in the /bin folder. 
-5. **Make sure you rename your `steam_api64.dll` to `steam_api65.dll`**!!
+5. **Make sure you rename the SDK's `steam_api64.dll` to `steam_api65.dll`**!!
 6. You can use the provided `WindowsCodecs.dll` from the [releases tab](https://github.com/shiversoftdev/BO3Enhanced/releases/tag/Current), or if you wish you can use [CFF Explorer](https://ntcore.com/explorer-suite-iii-cff-explorer-vii/) to add an import to your system32/WindowsCodecs.dll -- Import should be by name from `T7WSBootstrapper.dll`, function name `dummy_proc`.

@@ -68,6 +68,7 @@
     <ClInclude Include="pe.h" />
     <ClInclude Include="PicoSHA2.h" />
     <ClInclude Include="rizz.h" />
+    <ClInclude Include="scePadEnhancements.h" />
     <ClInclude Include="security.h" />
     <ClInclude Include="steam.h" />
     <ClInclude Include="SteamCBHandler.h" />
@@ -80,6 +81,7 @@
     <ClCompile Include="hks.cpp" />
     <ClCompile Include="MemoryModule.c" />
     <ClCompile Include="rizz.cpp" />
+    <ClCompile Include="scePadEnhancements.cpp" />
     <ClCompile Include="security.cpp" />
     <ClCompile Include="steam.cpp" />
     <ClCompile Include="SteamCBHandler.cpp" />
