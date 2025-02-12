@@ -36,25 +36,25 @@ int32_t ControllerIndexToScePadHandle(int controllerIndex)
 
     // make sure the controller is connected
     if (!gamePadLookup[controllerIndex].connected) {
-        nlog("controller %i not connected", controllerIndex);
+        //nlog("controller %i not connected", controllerIndex);
         return -1;
     }
 
     // make sure the controller is a scePad controller and actually connected
     // wtf 3arc this is a really silly way of doing it!
     if (gamePadLookup[controllerIndex].pad_index < 4 || gamePadLookup[controllerIndex].pad_index >= 8) {
-        nlog("pad index for %i out of range (%i)", controllerIndex, gamePadLookup[controllerIndex].pad_index);
+        //nlog("pad index for %i out of range (%i)", controllerIndex, gamePadLookup[controllerIndex].pad_index);
         return -1;
     }
     int pad_index = gamePadLookup[controllerIndex].pad_index;
 
     // sanity check
     if (handleLookup[pad_index].status < 0) {
-        nlog("pad status for %i=%i invalid (%i)", controllerIndex, pad_index, handleLookup[pad_index].status);
+        //nlog("pad status for %i=%i invalid (%i)", controllerIndex, pad_index, handleLookup[pad_index].status);
         return -1;
     }
     if (handleLookup[pad_index].handle_id < 0) {
-        nlog("scePad handle for %i=%i is %i, wtf?", controllerIndex, pad_index, handleLookup[pad_index].handle_id);
+        //nlog("scePad handle for %i=%i is %i, wtf?", controllerIndex, pad_index, handleLookup[pad_index].handle_id);
     }
 
     return handleLookup[pad_index].handle_id;
