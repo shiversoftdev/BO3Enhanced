@@ -516,6 +516,13 @@ void InstallHook(void* func)
     }
 }
 
+void alog_guid(GUID guid) {
+    ALOG("Guid = {%08lX-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX}",
+        guid.Data1, guid.Data2, guid.Data3,
+        guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
+        guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
+}
+
 std::unordered_map<INT64, CONTEXT> SavedExceptions;
 DWORD lck_dumping = NULL;
 uint64_t old_address_step = 0;
@@ -573,6 +580,48 @@ void ExceptHook(PEXCEPTION_RECORD ExceptionRecord, PCONTEXT ContextRecord)
 
                 ALOG("Game: %p\n", (void*)REBASE(0x0));
                 fprintf(f, "Game: %p\n", (void*)REBASE(0x0));
+
+                {
+                    auto peb = NtCurrentPeb();
+                    auto head = &peb->Ldr->InMemoryOrderModuleList;
+
+                    int mc = 0;
+                    auto entry = head->Flink;
+                    while (entry != head)
+                    {
+                        auto table_entry = CONTAINING_RECORD(entry, LDR_DATA_TABLE_ENTRY, InMemoryOrderLinks);
+
+                        size_t size = (wcslen(table_entry->FullDllName.Buffer) + 1) * sizeof(wchar_t);
+                        char* buffer = new char[size];
+                        std::wcstombs(buffer, table_entry->FullDllName.Buffer, size);
+                        
+
+                        auto dll = Pe::PeNative::fromModule(table_entry->DllBase);
+                        auto inf = dll.debug().findPdbDebugInfo();
+
+                        if (inf)
+                        {
+                            
+                            auto pdb = dll.debug().findPdbDebugInfo()->pdb70;
+                            auto guid = pdb.guid;
+                            ALOG("%s: %p pdb: %s {%08lX-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX} %u\n", buffer, table_entry->DllBase, dll.debug().findPdbDebugInfo()->pdb70.pdbName, guid.Data1, guid.Data2, guid.Data3,
+                                guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
+                                guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7], dll.headers().nt()->FileHeader.TimeDateStamp);
+                            fprintf(f, "%s: %p pdb: %s {%08lX-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX} %u\n", buffer, table_entry->DllBase, dll.debug().findPdbDebugInfo()->pdb70.pdbName, guid.Data1, guid.Data2, guid.Data3,
+                                guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
+                                guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7], dll.headers().nt()->FileHeader.TimeDateStamp);
+                        }
+                        else
+                        {
+                            ALOG("%s: %p\n", buffer, table_entry->DllBase);
+                            fprintf(f, "%s: %p\n", buffer, table_entry->DllBase);
+                        }
+
+                        delete[] buffer;
+                        buffer = NULL;
+                        entry = entry->Flink;
+                    }
+                }
 
                 ALOG("Module: %s\n", module_name);
                 fprintf(f, "Module: %s\n", module_name);
