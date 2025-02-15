@@ -1,5 +1,21 @@
 # BO3Enhanced
 
+BO3 Enhanced Forum Guide
+
+https://forum.ezz.lol/topic/123/bo3-enhanced-guide
+
+Archive Of The Forum Guide
+
+https://web.archive.org/web/20250214081053/https://forum.ezz.lol/topic/123/bo3-enhanced-guide
+
+COD BO3 Windows Store Dump
+
+https://github.com/Jack20091/Call-Of-Duty-Black-Ops-3-Windows-Store-Dump/releases/tag/COD_BO3_Windows_Store_Dump
+
+archive of the windows store dump
+
+https://web.archive.org/web/20250215132142/https://github.com/Jack20091/Call-Of-Duty-Black-Ops-3-Windows-Store-Dump/releases
+
 [BO3Enhanced](https://github.com/shiversoftdev/BO3Enhanced/releases/tag/Current) is a mod for the Windows Store edition of Black Ops 3 that allows you to crossplay with Steam and use the Steam game files.
 
 **You must own the Steam version of the game to connect online!**
