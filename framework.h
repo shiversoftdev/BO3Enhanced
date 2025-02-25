@@ -1111,5 +1111,5 @@ fn_return WINAPI __ ## fn_name fn_args
 #define LobbyMsg_HandleIM(targetController, senderXUID, buff, len) ((bool(__fastcall*)(uint32_t, XUID, char*, int))REBASE(0x1FF8870))(targetController, senderXUID, buff, len)
 #define LobbyMsg_PrepReadMsg(lobbyMsg) ((bool(__fastcall*)(LobbyMsg*))REBASE(0x1FF8FA0))(lobbyMsg)
 #define Com_Error(code, fmt, ...) ((void(__fastcall*)(const char*, uint32_t, uint32_t, const char*, ...))REBASE(0x2210B90))("", 0, code, fmt, __VA_ARGS__)
-
+#define BG_ResetEmblemsCache() ((void(*)())REBASE(0x273FD10))()
 #define CRASH_LOG_NAME "crashes.log"

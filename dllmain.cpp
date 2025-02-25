@@ -826,7 +826,7 @@ MDT_Define_FASTCALL(REBASE(0x21F00B0), set_mod_super_hook, void, (int a1, char* 
 
         for (uint32_t i = 0; i < ugcmods->num_entries; i++)
         {
-            if (!strcmp(ugcmods->entries[i].name, fs_game))
+            if (!strcmp(ugcmods->entries[i].ugcName, fs_game))
             {
                 target = &ugcmods->entries[i];
                 break;
@@ -1199,6 +1199,31 @@ CoD.SpecialCallingCards = {}";
     return res;
 }
 
+int Lua_ResetEmblemsCache(void* s)
+{
+    ALOG("Resetting emblems cache...");
+    BG_ResetEmblemsCache();
+    return 1;
+}
+
+MDT_Define_FASTCALL(PTR_hksI_openlib, hksI_openlib_hook, void, (lua_State* s, const char* libname, const luaL_Reg l[], int nup, int isHksFunc))
+{
+    if ((uint64_t)_ReturnAddress() == REBASE(0x1E49523)) // just some random call to openlib, only need it once
+    {
+        const luaL_Reg lib[] =
+        {
+            {"ResetEmblemsCache", Lua_ResetEmblemsCache},
+            {nullptr, nullptr}
+        };
+
+        ALOG("Registering BO3Enhanced lua functions...");
+
+        MDT_ORIGINAL(hksI_openlib_hook, (s, "BO3Enhanced", lib, 0, 1));
+    }
+
+    MDT_ORIGINAL(hksI_openlib_hook, (s, libname, l, nup, isHksFunc));
+}
+
 void patch_lua()
 {
     // disable server browser
@@ -1452,6 +1477,7 @@ void add_prehooks()
     MDT_Activate(Content_HasEntitlementOwnershipByRef_hook);
     MDT_Activate(FS_FindXZone_hook);
     MDT_Activate(LiveStats_AreStatsDeltasValid_hook);
+    MDT_Activate(hksI_openlib_hook);
 
     // testing stuff
 #if BADWORD_BYPASS
