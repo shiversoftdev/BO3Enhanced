@@ -6,7 +6,7 @@
 #define WSTORE_UPDATER_WSID 3413662211
 #define WSTORE_UPDATER_FILENAME "wsupdate.ff"
 #define WSTORE_UPDATER_DEST_FILENAME "wsupdate.next"
-#define VERSION_STRING "BO3Enhanced v1.08"
+#define VERSION_STRING "BO3Enhanced v1.09"
 
 // If true, is development environment (printing, console, etc)
 #define IS_DEVELOPMENT 0
@@ -60,6 +60,7 @@
 
 #include <windows.h>
 #include <stdio.h>
+#include <functional>
 
 #define NT_SUCCESS(x) ((x) >= 0)
 #define STATUS_INFO_LENGTH_MISMATCH 0xc0000004
@@ -1071,6 +1072,9 @@ void MSG_WriteBit0(msg_t* msg);
 SessionClient* LobbySession_GetClientByClientNum(LobbySession* session, uint32_t index);
 netadr_t LobbySession_GetClientNetAdrByIndex(LobbyType type, uint32_t clientnum);
 
+void register_frame_event(std::function<void()> lambda);
+void set_delay(uint32_t delayMS, uint32_t eventID, std::function<void()> lambda);
+
 extern bool g_needsUpdatePrompt;
 
 namespace Iat_hook_
@@ -1113,3 +1117,5 @@ fn_return WINAPI __ ## fn_name fn_args
 #define Com_Error(code, fmt, ...) ((void(__fastcall*)(const char*, uint32_t, uint32_t, const char*, ...))REBASE(0x2210B90))("", 0, code, fmt, __VA_ARGS__)
 #define BG_ResetEmblemsCache() ((void(*)())REBASE(0x273FD10))()
 #define CRASH_LOG_NAME "crashes.log"
+
+#define DELAYED_EVENT_PROCESSORAFFINITY 1

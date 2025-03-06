@@ -420,6 +420,62 @@ netadr_t LobbySession_GetClientNetAdrByIndex(LobbyType type, uint32_t clientnum)
     return client->activeClient->sessionInfo[session->type].netAdr;
 }
 
+struct delayed_call
+{
+public:
+    std::function<void(void)> lambda;
+    uint64_t execute_time;
+    uint32_t event_id;
+};
+
+std::unordered_map<uint32_t, delayed_call> local_events_named;
+std::vector<std::function<void()>> local_events_every_frame;
+
+void dispatch_events()
+{
+    for (auto it = local_events_every_frame.begin(); it != local_events_every_frame.end(); ++it)
+    {
+        (*it)();
+    }
+
+    std::vector<uint32_t> dispatched_events;
+
+    for (auto it = local_events_named.begin(); it != local_events_named.end(); it++)
+    {
+        if (it->second.execute_time > GetTickCount64())
+        {
+            continue;
+        }
+
+        dispatched_events.push_back(it->first);
+
+        it->second.lambda();
+    }
+
+    for (auto& i : dispatched_events)
+    {
+        local_events_named.erase(i);
+    }
+}
+
+void register_frame_event(std::function<void()> lambda)
+{
+    local_events_every_frame.push_back(lambda);
+}
+
+void set_delay(uint32_t delayMS, uint32_t eventID, std::function<void()> lambda)
+{
+    if (local_events_named.find(eventID) != local_events_named.end())
+    {
+        return;
+    }
+
+    local_events_named[eventID] = delayed_call();
+    local_events_named[eventID].lambda = lambda;
+    local_events_named[eventID].event_id = eventID;
+    local_events_named[eventID].execute_time = GetTickCount64() + delayMS;
+}
+
 LobbyType LobbySession_GetControllingLobbySession(LobbyModule lobbyModule)
 {
     return (LobbyType)(*(uint32_t*)(REBASE(0xBEFF3C0) + 0x2A58llu * lobbyModule) > 0);
@@ -1446,6 +1502,12 @@ MDT_Define_FASTCALL(REBASE(0x1FA17D0), LiveStats_AreStatsDeltasValid_hook, uint8
     return 1;
 }
 
+MDT_Define_FASTCALL(REBASE(0x13ED0D0), EveryFrameHook, void, ())
+{
+    MDT_ORIGINAL(EveryFrameHook, ());
+    dispatch_events();
+}
+
 //defined in steam.cpp
 extern void init_steamapi();
 
@@ -1478,6 +1540,7 @@ void add_prehooks()
     MDT_Activate(FS_FindXZone_hook);
     MDT_Activate(LiveStats_AreStatsDeltasValid_hook);
     MDT_Activate(hksI_openlib_hook);
+    MDT_Activate(EveryFrameHook);
 
     // testing stuff
 #if BADWORD_BYPASS
@@ -1594,6 +1657,70 @@ void add_hooks()
     dumpa_da_anticheats(REBASE(0x8E573B8), (0x8E57400 - 0x8E573B8) / 8);
     dumpa_da_anticheats(REBASE(0x8E57410), (0x8E574A0 - 0x8E57410) / 8);*/
     // dumpa_da_anticheats(REBASE(0x8E573B8), (0x8E57498 - 0x8E573B8) / 8);
+
+    // processor affinity for AMD cpus
+    register_frame_event([]()
+    {
+        static int affinityState = 0;
+        static ULONG_PTR processAffinity = 0;
+        static ULONG_PTR systemAffinity = 0;
+
+        if (affinityState > 1)
+        {
+            return;
+        }
+
+        set_delay(1000, DELAYED_EVENT_PROCESSORAFFINITY, []()
+        {
+            switch (affinityState)
+            {
+                case 0:
+                {
+                    ALOG("Attempting to set affinity state...");
+                    if (!GetProcessAffinityMask(GetCurrentProcess(), &processAffinity, &systemAffinity))
+                    {
+                        ALOG("Unable to get affinity state");
+                        break;
+                    }
+
+                    if (!processAffinity)
+                    {
+                        ALOG("Unable to get affinity state (1)");
+                        break;
+                    }
+
+                    ULONG_PTR affinity = processAffinity & (1 | 2 | 4 | 8);
+
+                    if (!affinity)
+                    {
+                        break;
+                    }
+
+                    if (!SetProcessAffinityMask(GetCurrentProcess(), affinity))
+                    {
+                        ALOG("Unable to set affinity state");
+                        break;
+                    }
+
+                    ALOG("Processor affinity set!");
+                    affinityState++;
+                }
+                break;
+                case 1:
+                {
+                    if (!SetProcessAffinityMask(GetCurrentProcess(), processAffinity))
+                    {
+                        ALOG("Processor affinity failed to reset");
+                        break;
+                    }
+
+                    ALOG("Processor affinity reset!");
+                    affinityState++;
+                }
+                break;
+            }
+        });
+    });
 }
 
 DWORD WINAPI watch_ready_inject(_In_ LPVOID lpParameter)

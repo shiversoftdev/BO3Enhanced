@@ -129,12 +129,6 @@ void steam_dispatch_every_frame()
 	}
 }
 
-MDT_Define_FASTCALL(REBASE(0x13ED0D0), EveryFrameHook, void, ()) 
-{
-	MDT_ORIGINAL(EveryFrameHook, ());
-	steam_dispatch_every_frame();
-}
-
 void parse_steam_p2p_msg(CSteamID from, uint8_t* buf, uint32_t size) {
 	// TODO(Emma): implement, might be needed for lobbies with Steam hosts
 	if (buf[0] == 0x16) // auth ticket request
@@ -581,7 +575,12 @@ void init_steamapi()
 
 	// run a thread and hook every frame to handle our callbacks
 	CreateThread(NULL, NULL, steam_callbacks_thread, NULL, NULL, NULL);
-	MDT_Activate(EveryFrameHook);
+	
+	register_frame_event([]()
+	{
+		steam_dispatch_every_frame();
+	});
+
 	// request an appticket upon launch
 	uint8_t steamRequestData[0x58];
 	bdAuthXB1toSteam_createSteamRequestData(steamRequestData);
