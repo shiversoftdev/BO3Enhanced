@@ -27,7 +27,7 @@ Download: https://github.com/shiversoftdev/BO3Enhanced/releases/tag/Current
 
 ## Credits
 - [Emma / IPG](https://github.com/InvoxiPlayGames) - Project Developer
-- [Anthony / serious](https://github.com/shiversoftdev) - Project Developer
+- [serious](https://github.com/shiversoftdev) - Project Developer
 - [ssno](https://github.com/ssnob) - TAC research and assistance with several components of the project
 - [Contributors on GitHub](https://github.com/shiversoftdev/BO3Enhanced/graphs/contributors) - misc fixes and features, thanks!
 
