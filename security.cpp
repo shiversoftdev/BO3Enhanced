@@ -280,55 +280,65 @@ void sec_config::loadfrom(const char* path)
     }
 
     std::string line;
-    while (!std::getline(infile, line).eof())
+    //while (!std::getline(infile, line).eof())
+    for (;;)
     {
+        auto hasNextLine = std::getline(infile, line).eof();
         auto sep = line.find("=");
         if (sep == std::string::npos || sep >= (line.length() - 1)) // must have a value
         {
-            continue;
+            goto check;
         }
 
         // is this config resilliant to whitespace issues? nope!
-        auto token = line.substr(0, sep);
-        auto val = line.substr(sep + 1);
-        switch (fnv1a(token.data()))
         {
-        case FNV32("playername"):
-        {
-            if (val.length() > 15)
+            auto token = line.substr(0, sep);
+            auto val = line.substr(sep + 1);
+            switch (fnv1a(token.data()))
             {
-                val = val.substr(0, 15);
-            }
-            std::strcpy(playername, val.data());
-            SALOG("Read playername from config: %s", playername);
-        }
-        break;
-        case FNV32("isfriendsonly"):
-        {
-            std::istringstream ivalread(val);
-            ivalread >> is_friends_only;
-            if (ivalread.fail())
-            {
-                is_friends_only = 0; // its better to have it fail then to have people who cant disable this setting because of whatever reason
-            }
-            SALOG("Read isfriendsonly from config: %u", is_friends_only);
-        }
-        break;
-        case FNV32("networkpassword"):
-        {
-            if (val.length() > 1023)
-            {
-                val = val.substr(0, 1023); // seriously?!
-            }
+                case FNV32("playername"):
+                {
+                    if (val.length() > 15)
+                    {
+                        val = val.substr(0, 15);
+                    }
+                    std::strcpy(playername, val.data());
+                    SALOG("Read playername from config: %s", playername);
+                }
+                break;
+                case FNV32("isfriendsonly"):
+                {
+                    std::istringstream ivalread(val);
+                    ivalread >> is_friends_only;
+                    if (ivalread.fail())
+                    {
+                        is_friends_only = 0; // its better to have it fail then to have people who cant disable this setting because of whatever reason
+                    }
+                    SALOG("Read isfriendsonly from config: %u", is_friends_only);
+                }
+                break;
+                case FNV32("networkpassword"):
+                {
+                    if (val.length() > 1023)
+                    {
+                        val = val.substr(0, 1023); // seriously?!
+                    }
 
-            auto hash = security::canon_hash64(val.data());
-            password_changed_time = GetTickCount64();
-            password_history[0] = password_history[1];
-            password_history[1] = hash;
+                    auto hash = security::canon_hash64(val.data());
+                    password_changed_time = GetTickCount64();
+                    password_history[0] = password_history[1];
+                    password_history[1] = hash;
 
-            SALOG("Read network password from config!");
+                    SALOG("Read network password from config!");
+                }
+                break;
+            }
         }
-        break;
+
+    check:
+        if (!hasNextLine)
+        {
+            break;
         }
     }
 
@@ -348,7 +358,8 @@ void sec_config::saveto(const char* path)
     }
 
     outfile << "playername=" << playername << std::endl;
-    outfile << "isfriendsonly=" << is_friends_only << std::endl;
+    outfile << "isfriendsonly=" << std::to_string(is_friends_only) << std::endl;
+    outfile << "networkpassword=" << std::endl << std::endl;
     outfile.close();
     update_watcher_time(path);
 }
