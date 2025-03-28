@@ -283,7 +283,7 @@ void sec_config::loadfrom(const char* path)
     //while (!std::getline(infile, line).eof())
     for (;;)
     {
-        auto hasNextLine = std::getline(infile, line).eof();
+        auto hasNextLine = !std::getline(infile, line).eof();
         auto sep = line.find("=");
         if (sep == std::string::npos || sep >= (line.length() - 1)) // must have a value
         {
@@ -310,10 +310,16 @@ void sec_config::loadfrom(const char* path)
                 {
                     std::istringstream ivalread(val);
                     ivalread >> is_friends_only;
+                    
                     if (ivalread.fail())
                     {
                         is_friends_only = 0; // its better to have it fail then to have people who cant disable this setting because of whatever reason
                     }
+                    else // yes this is stupid -- im far too tired to deal with this correctly. i hate c++.
+                    {
+                        is_friends_only = is_friends_only == '1';
+                    }
+
                     SALOG("Read isfriendsonly from config: %u", is_friends_only);
                 }
                 break;

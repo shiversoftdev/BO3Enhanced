@@ -6,7 +6,7 @@
 #define WSTORE_UPDATER_WSID 3413662211
 #define WSTORE_UPDATER_FILENAME "wsupdate.ff"
 #define WSTORE_UPDATER_DEST_FILENAME "wsupdate.next"
-#define VERSION_STRING "BO3Enhanced v1.10"
+#define VERSION_STRING "BO3Enhanced v1.11"
 
 // If true, is development environment (printing, console, etc)
 #define IS_DEVELOPMENT 0
