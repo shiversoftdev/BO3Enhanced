@@ -1382,7 +1382,7 @@ void ac_bypass_allocconsole()
 //    auto v3 = *(uint64_t*)(v1 + 8);
 //    auto mat = **(uint64_t**)(gfxstate + 0x1D60);
 //
-//    if (strcmp((char*)mat, "white_replace"))
+//    if (strcmp((char*)mat, "lensflare"))
 //    {
 //        return;
 //    }
@@ -1399,7 +1399,7 @@ void ac_bypass_allocconsole()
 //
 //        if (!res)
 //        {
-//            ALOG("white_replace FAILURE: res %p vert %u mat %p v3 %p shader %p", (uint32_t)res, vert, mat, v3, shader);
+//            ALOG("lensflare FAILURE: res %p vert %u mat %p v3 %p shader %p", (uint32_t)res, vert, mat, v3, shader);
 //            SuspendProcess();
 //        }
 //        else if (!(gfxVertexDeclLck % 250))
@@ -1429,14 +1429,22 @@ jmp    rax
 */
 char zone_patch_asm[] = { 0x89, 0x07, 0x48, 0xB8, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, 0x00, 0x48, 0x8B, 0x53, 0x08, 0x8B, 0x0B, 0x49, 0x89, 0xD8, 0xFF, 0xD0, 0xFF, 0xE0 };
 bool no_print_debug = false;
+const char* unload_prevention_list[] = {
+    "wc/lit_detail_advanced#882572b8",
+    "wc/lit_decal_reveal#882572b8"
+};
+int num_unload_preventions = sizeof(unload_prevention_list) / sizeof(unload_prevention_list[0]);
 uint64_t DB_FreeXAssetHeader_hook(uint8_t assetType, uint64_t header, uint64_t entry)
 {
     if (assetType == xasset_techset)
     {
         auto name = *(char**)header;
-        if (name && !strcmp(name, "wc/lit_detail_advanced#882572b8"))
+        if (name)
         {
-            return REBASE(0x14E0DA3);
+            for (int i = 0; i < num_unload_preventions; i++) {
+                if (strcmp(name, unload_prevention_list[i]) == 0)
+                    return REBASE(0x14E0DA3);
+            }
         }
     }
 
