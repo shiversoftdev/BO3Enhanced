@@ -529,6 +529,179 @@ MDT_Define_FASTCALL(REBASE(0x292049C), XGameSaveFilesGetFolderWithUiResult_hook,
 	return 0;
 }
 
+typedef struct _PresenceData {
+	char unk1[0x8];
+	uint64_t XUID;
+	char unk2[0x30];
+	int state;
+	int activity;
+	int ctx;
+	int joinable;
+	int gametypeID;
+	int mapID;
+	int difficulty;
+	int playlist;
+	char unk_[0x318];
+} PresenceData;
+
+typedef struct _FriendInfo {
+	char name[17];
+	char pad[0x8];
+	PresenceData presence;
+	int lastFetchedTime;
+	char unk[0x4C];
+} FriendInfo;
+int sizeofFriendInfo = sizeof(FriendInfo); // 1000
+
+typedef struct _FriendsListTime {
+	int all;
+	int online;
+	int title;
+} FriendsListTime;
+
+typedef struct _SortInfo {
+	int index;
+	FriendInfo* friendInfo;
+} SortInfo;
+
+typedef struct _FriendsListSorting {
+	SortInfo online[100];
+	SortInfo alphabetical[100];
+	SortInfo* current;
+} FriendsListSorting;
+
+typedef struct _FriendsList {
+	FriendInfo* friends;
+	int numFriends;
+	int maxNumFriends;
+	FriendsListTime requestTime;
+	FriendsListTime fetchTime;
+	FriendsListSorting sorting;
+} FriendsList;
+
+static void fill_in_friend(CSteamID steamID, FriendInfo* info)
+{
+	memset(info, 0, sizeof(info));
+	uint64_t uintsteam = steamID.ConvertToUint64();
+
+	// keep the name handy for parsing
+	char tempName[0x80];
+	strncpy(tempName, SteamFriends()->GetFriendPersonaName(steamID), sizeof(tempName));
+
+	// fill the name and steamid in the friendinfo struct
+	strncpy(info->name, tempName, 0x10);
+	info->name[0x10] = 0;
+	info->presence.XUID = steamID.ConvertToUint64();
+
+	*(int*)info->presence.unk_ = time(NULL);
+	info->presence.unk_[4] = 0x12;
+
+	if (SteamFriends()->GetFriendPersonaState(steamID) == k_EPersonaStateOffline)
+	{
+		info->presence.state = 0x08;
+		info->presence.activity = 0x00; // PRESENCE_ACTIVITY_OFFLINE
+		info->presence.gametypeID = 0xFFFFFFFF;
+		info->presence.mapID = 0xFFFFFFFF;
+		return;
+	}
+
+	FriendGameInfo_t currentGame;
+	// check if user is playing BO3 (GetFriendGamePlayed fails = no game, PS3 mode engaged)
+	if (!SteamFriends()->GetFriendGamePlayed(steamID, &currentGame) ||
+		currentGame.m_gameID.AppID() != 311210) {
+		info->presence.state = 0x04;
+		info->presence.activity = 0x01; // PRESENCE_ACTIVITY_ONLINE_NOT_IN_TITLE
+		info->presence.gametypeID = 0xFFFFFFFF;
+		info->presence.mapID = 0xFFFFFFFF;
+		return;
+	}
+
+	info->presence.state = 0x04;
+	info->presence.activity = 0x07; // PRESENCE_ACTIVITY_IN_TITLE
+
+	// they are playing BO3 so get rich presence data
+	const char* state_str = SteamFriends()->GetFriendRichPresence(steamID, "state");
+	const char *tActivity_str = SteamFriends()->GetFriendRichPresence(steamID, "tActivity");
+	const char* tCtx_str = SteamFriends()->GetFriendRichPresence(steamID, "tCtx");
+	const char* tJoinable_str = SteamFriends()->GetFriendRichPresence(steamID, "tJoinable");
+	const char* tGametype_str = SteamFriends()->GetFriendRichPresence(steamID, "tGametype");
+	const char* tMapId_str = SteamFriends()->GetFriendRichPresence(steamID, "tMapId");
+	const char* tDifficulty_str = SteamFriends()->GetFriendRichPresence(steamID, "tDifficulty");
+	const char* tPlaylist_str = SteamFriends()->GetFriendRichPresence(steamID, "tPlaylist");
+
+	// blank state string assume presence isn't valid
+	if (strlen(state_str) == 0)
+		return;
+
+	// otherwise fill in our struct
+	//info->presence.state |= atoi(state_str);
+	info->presence.activity = atoi(tActivity_str);
+	info->presence.ctx = atoi(tCtx_str);
+	info->presence.joinable = atoi(tJoinable_str);
+	info->presence.gametypeID = atoi(tGametype_str);
+	info->presence.mapID = atoi(tMapId_str);
+	info->presence.difficulty = atoi(tDifficulty_str);
+	info->presence.playlist = atoi(tPlaylist_str);
+}
+
+MDT_Define_FASTCALL(REBASE(0x1ee7610), LiveFriends_Update_hook, void, (void))
+{
+	FriendsList* friendsList = (FriendsList*)REBASE(0x148f1510);
+	// clear out some of the friends list struct
+	friendsList->numFriends = 0;
+	int allowedFriends = SteamFriends()->GetFriendCount(k_EFriendFlagImmediate);
+	if (allowedFriends > friendsList->maxNumFriends)
+		allowedFriends = friendsList->maxNumFriends;
+	// enumerate through all steam friends
+	for (int i = 0; i < allowedFriends; i++)
+	{
+		int idx = friendsList->numFriends;
+		CSteamID cppDoesntLetYouSayFriend = SteamFriends()->GetFriendByIndex(i, k_EFriendFlagImmediate);
+		fill_in_friend(cppDoesntLetYouSayFriend, &friendsList->friends[idx]);
+		friendsList->sorting.alphabetical[idx].index = idx;
+		friendsList->sorting.alphabetical[idx].friendInfo = &friendsList->friends[idx];
+		friendsList->sorting.online[idx].index = idx;
+		friendsList->sorting.online[idx].friendInfo = &friendsList->friends[idx];
+		friendsList->numFriends++;
+	}
+}
+
+
+MDT_Define_FASTCALL(REBASE(0x1f95bd0), LivePresence_UpdatePlatform_hook, void, (int controller, PresenceData* presence))
+{
+	// set stuff we can't rip out of the presence blob
+	SteamFriends()->SetRichPresence("ref", "PRESENCE_NOTINGAME"); // never properly set
+	SteamFriends()->SetRichPresence("params", ""); // unsure, never seen it different
+	SteamFriends()->SetRichPresence("status", "Main Menu"); // "Main Menu", "Multiplayer", "Zombies" etc
+	SteamFriends()->SetRichPresence("version", "1"); // unsure, always 1
+
+	// and set the stuff we can!
+	static char stateBuf[14];
+	static char tActivityBuf[14];
+	static char tCtxBuf[14];
+	static char tJoinableBuf[14];
+	static char tGametypeBuf[14];
+	static char tMapIdBuf[14];
+	static char tDifficultyBuf[14];
+	static char tPlaylistBuf[14];
+	snprintf(stateBuf, sizeof(stateBuf), "%i", presence->state);
+	snprintf(tActivityBuf, sizeof(tActivityBuf), "%i", presence->activity);
+	snprintf(tCtxBuf, sizeof(tCtxBuf), "%i", presence->ctx);
+	snprintf(tJoinableBuf, sizeof(tJoinableBuf), "%i", presence->joinable);
+	snprintf(tGametypeBuf, sizeof(tGametypeBuf), "%i", presence->gametypeID);
+	snprintf(tMapIdBuf, sizeof(tMapIdBuf), "%i", presence->mapID);
+	snprintf(tDifficultyBuf, sizeof(tDifficultyBuf), "%i", presence->difficulty);
+	snprintf(tPlaylistBuf, sizeof(tPlaylistBuf), "%i", presence->playlist);
+	SteamFriends()->SetRichPresence("state", stateBuf);
+	SteamFriends()->SetRichPresence("tActivity", tActivityBuf);
+	SteamFriends()->SetRichPresence("tCtx", tCtxBuf);
+	SteamFriends()->SetRichPresence("tJoinable", tJoinableBuf);
+	SteamFriends()->SetRichPresence("tGametype", tGametypeBuf);
+	SteamFriends()->SetRichPresence("tMapId", tMapIdBuf);
+	SteamFriends()->SetRichPresence("tDifficulty", tDifficultyBuf);
+	SteamFriends()->SetRichPresence("tPlaylist", tPlaylistBuf);
+}
+
 void init_steamapi()
 {
 	SetEnvironmentVariableA("SteamAppId", "311210");
@@ -569,6 +742,10 @@ void init_steamapi()
 
 	// show the steam profile for users instead of the xbox profile
 	MDT_Activate(ShowPlatformProfile_hook);
+
+	// friends list patch
+	MDT_Activate(LiveFriends_Update_hook);
+	MDT_Activate(LivePresence_UpdatePlatform_hook);
 
 	gSteamCBHandler = new CSteamCBHandler();
 	gSteamCBHandler->OnValidateAuthTicket = OnGotAuthTicketResponse;
