@@ -102,6 +102,10 @@ dwInstantMsgSteamPacket instantPacket = { 0 };
 
 #define dwInstantDispatchMessage(fromId, controllerIndex, data, size) ((void(__fastcall*)(uint64_t, int, uint8_t *, int))REBASE(0x14f6710))(fromId, controllerIndex, data, size)
 
+// doing friends stuff every now and again
+uint64_t lastFriendsUpdateTime = 0;
+void LiveFriends_Update_hook(); // forward declare
+
 // we run this every frame in the game thread
 void steam_dispatch_every_frame() 
 {
@@ -121,6 +125,13 @@ void steam_dispatch_every_frame()
 	}
 
 	check_steamauth();
+
+	uint64_t currentTime = time(NULL);
+	if (currentTime > (lastFriendsUpdateTime + 2))
+	{
+		LiveFriends_Update_hook();
+		lastFriendsUpdateTime = currentTime;
+	}
 
 	if (g_needsUpdatePrompt)
 	{
@@ -650,8 +661,6 @@ MDT_Define_FASTCALL(REBASE(0x1ee7610), LiveFriends_Update_hook, void, (void))
 	// clear out some of the friends list struct
 	friendsList->numFriends = 0;
 	int allowedFriends = SteamFriends()->GetFriendCount(k_EFriendFlagImmediate);
-	if (allowedFriends > friendsList->maxNumFriends)
-		allowedFriends = friendsList->maxNumFriends;
 	// enumerate through all steam friends
 	for (int i = 0; i < allowedFriends; i++)
 	{
@@ -663,6 +672,9 @@ MDT_Define_FASTCALL(REBASE(0x1ee7610), LiveFriends_Update_hook, void, (void))
 		friendsList->sorting.online[idx].index = idx;
 		friendsList->sorting.online[idx].friendInfo = &friendsList->friends[idx];
 		friendsList->numFriends++;
+		// cap out at 100 friends
+		if (friendsList->numFriends >= friendsList->maxNumFriends)
+			break;
 	}
 }
 
@@ -672,7 +684,7 @@ MDT_Define_FASTCALL(REBASE(0x1f95bd0), LivePresence_UpdatePlatform_hook, void, (
 	// set stuff we can't rip out of the presence blob
 	SteamFriends()->SetRichPresence("ref", "PRESENCE_NOTINGAME"); // never properly set
 	SteamFriends()->SetRichPresence("params", ""); // unsure, never seen it different
-	SteamFriends()->SetRichPresence("status", "Main Menu"); // "Main Menu", "Multiplayer", "Zombies" etc
+	SteamFriends()->SetRichPresence("status", "BO3Enhanced"); // "Main Menu", "Multiplayer", "Zombies" etc
 	SteamFriends()->SetRichPresence("version", "1"); // unsure, always 1
 
 	// and set the stuff we can!
@@ -700,6 +712,25 @@ MDT_Define_FASTCALL(REBASE(0x1f95bd0), LivePresence_UpdatePlatform_hook, void, (
 	SteamFriends()->SetRichPresence("tMapId", tMapIdBuf);
 	SteamFriends()->SetRichPresence("tDifficulty", tDifficultyBuf);
 	SteamFriends()->SetRichPresence("tPlaylist", tPlaylistBuf);
+
+	// tell steam if the lobby is joinable or not
+	if (presence->joinable == 1 || presence->joinable == 2) // LOBBY_JOINABLE_YES / LOBBY_JOINABLE_YES_FRIENDS_ONLY
+		SteamMatchmaking()->SetLobbyJoinable(CSteamID(gLobbyID), true);
+	else
+		SteamMatchmaking()->SetLobbyJoinable(CSteamID(gLobbyID), false);
+
+#if USES_GDK
+	// set the presence on Xbox Live still, but disallow joining the lobby
+	PresenceData newPresenceData;
+	memcpy(&newPresenceData, presence, sizeof(PresenceData));
+	newPresenceData.joinable = 0xA; // LOBBY_JOINABLE_NO_YOU_NEED_DLC
+	MDT_ORIGINAL(LivePresence_UpdatePlatform_hook, (controller, &newPresenceData));
+#endif
+}
+
+MDT_Define_FASTCALL(REBASE(0x1f44d90), Live_SendInvite_hook, void, (int controller, uint64_t xuid))
+{
+	SteamMatchmaking()->InviteUserToLobby(CSteamID(gLobbyID), CSteamID(xuid));
 }
 
 void init_steamapi()
@@ -742,6 +773,9 @@ void init_steamapi()
 
 	// show the steam profile for users instead of the xbox profile
 	MDT_Activate(ShowPlatformProfile_hook);
+
+	// invite users via steam instead of xbox
+	MDT_Activate(Live_SendInvite_hook);
 
 	// friends list patch
 	MDT_Activate(LiveFriends_Update_hook);

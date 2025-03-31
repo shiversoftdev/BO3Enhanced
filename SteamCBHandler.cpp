@@ -1,4 +1,5 @@
 #include "SteamCBHandler.h"
+#include "steam.h"
 
 //defined in dllmain.cpp
 extern void nlog(const char* str, ...);
@@ -73,5 +74,6 @@ void CSteamCBHandler::OnLobbyEnter(LobbyEnter_t* pCallback)
 		char xuid[64]{ 0 };
 		sprintf(xuid, "%llu", SteamUser()->GetSteamID().ConvertToUint64());
 		SteamMatchmaking()->SetLobbyData(pCallback->m_ulSteamIDLobby, "connect_host", xuid);
+		gLobbyID = pCallback->m_ulSteamIDLobby;
 	}
 }
