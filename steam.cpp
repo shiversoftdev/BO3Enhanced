@@ -81,6 +81,7 @@ MDT_Define_FASTCALL(REBASE(0x2922220), XalUserGetGamertag_hook, int, (void *xuse
 	}
 	else
 	{
+		gSteamPlayername = SteamFriends()->GetPersonaName();
 		strncpy(output, gSteamPlayername, gt_size);
 		*output_size = min(strlen(gSteamPlayername), gt_size);
 	}
