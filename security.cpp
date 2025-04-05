@@ -281,6 +281,7 @@ void sec_config::loadfrom(const char* path)
 
     std::string line;
     //while (!std::getline(infile, line).eof())
+    bool b_was_any_password = false;
     for (;;)
     {
         auto hasNextLine = !std::getline(infile, line).eof();
@@ -330,6 +331,8 @@ void sec_config::loadfrom(const char* path)
                         val = val.substr(0, 1023); // seriously?!
                     }
 
+                    b_was_any_password = true;
+
                     auto hash = security::canon_hash64(val.data());
                     password_changed_time = GetTickCount64();
                     password_history[0] = password_history[1];
@@ -346,6 +349,13 @@ void sec_config::loadfrom(const char* path)
         {
             break;
         }
+    }
+
+    if (!b_was_any_password)
+    {
+        password_changed_time = GetTickCount64();
+        password_history[0] = password_history[1];
+        password_history[1] = 0;
     }
 
     infile.close();

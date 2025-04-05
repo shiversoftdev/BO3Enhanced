@@ -1373,48 +1373,48 @@ void ac_bypass_allocconsole()
 #endif
 }
 
-//uint64_t gfxVertexDeclLck = 0;
-//bool gfxVertexDeclPatchLck = false;
-//MDT_Define_FASTCALL(REBASE(0x1DE9B10), R_UpdateVertexDecl_hook, void, (uint64_t gfxstate))
-//{
-//    MDT_ORIGINAL(R_UpdateVertexDecl_hook, (gfxstate));
-//    auto v1 = *(uint64_t*)(gfxstate + 7544);
-//    auto v3 = *(uint64_t*)(v1 + 8);
-//    auto mat = **(uint64_t**)(gfxstate + 0x1D60);
-//
-//    if (strcmp((char*)mat, "lensflare"))
-//    {
-//        return;
-//    }
-//
-//    if (v3)
-//    {
-//        auto vert = *(int*)(gfxstate + 0x40C8);
-//        uint64_t res = *(uint64_t*)(v3 + 8llu * vert + 24llu);
-//        uint64_t shader;
-//        if (*(uint32_t*)v1 == 2)
-//            shader = *(uint64_t*)(v1 + 48);
-//        else
-//            shader = *(uint64_t*)(v1 + 24);
-//
-//        if (!res)
-//        {
-//            ALOG("lensflare FAILURE: res %p vert %u mat %p v3 %p shader %p", (uint32_t)res, vert, mat, v3, shader);
-//            SuspendProcess();
-//        }
-//        else if (!(gfxVertexDeclLck % 250))
-//        {
-//            if (!gfxVertexDeclPatchLck)
-//            {
-//                gfxVertexDeclPatchLck = true;
-//                DWORD old;
-//                VirtualProtect((LPVOID)v3, 255, PAGE_READONLY, &old);
-//            }
-//        }
-//    }
-//
-//    ++gfxVertexDeclLck;
-//}
+uint64_t gfxVertexDeclLck = 0;
+bool gfxVertexDeclPatchLck = false;
+MDT_Define_FASTCALL(REBASE(0x1DE9B10), R_UpdateVertexDecl_hook, void, (uint64_t gfxstate))
+{
+    MDT_ORIGINAL(R_UpdateVertexDecl_hook, (gfxstate));
+    auto v1 = *(uint64_t*)(gfxstate + 7544);
+    auto v3 = *(uint64_t*)(v1 + 8);
+    auto mat = **(uint64_t**)(gfxstate + 0x1D60);
+
+    /*if (strcmp((char*)mat, "lensflare"))
+    {
+        return;
+    }*/
+
+    if (v3)
+    {
+        auto vert = *(int*)(gfxstate + 0x40C8);
+        uint64_t res = *(uint64_t*)(v3 + 8llu * vert + 24llu);
+        uint64_t shader;
+        if (*(uint32_t*)v1 == 2)
+            shader = *(uint64_t*)(v1 + 48);
+        else
+            shader = *(uint64_t*)(v1 + 24);
+
+        if (!res)
+        {
+            ALOG("%s FAILURE: res %p vert %u mat %p v3 %p shader %p", (char*)mat, (uint32_t)res, vert, mat, v3, shader);
+            SuspendProcess();
+        }
+        else if (!(gfxVertexDeclLck % 250))
+        {
+            if (!gfxVertexDeclPatchLck)
+            {
+                gfxVertexDeclPatchLck = true;
+                DWORD old;
+                VirtualProtect((LPVOID)v3, 255, PAGE_READONLY, &old);
+            }
+        }
+    }
+
+    ++gfxVertexDeclLck;
+}
 
 /* LOL!!!
 
@@ -1453,16 +1453,16 @@ uint64_t DB_FreeXAssetHeader_hook(uint8_t assetType, uint64_t header, uint64_t e
     return REBASE(0x14E0D8C); // original return address
 }
 
-//MDT_Define_FASTCALL(REBASE(0x14DA3A0), DB_FreeXAssetHeader_hook_2, void, (uint8_t assetType, uint64_t header))
-//{
-//    // ALOG("UNLOAD INFO %u", (uint32_t)assetType);
-//    if (xasset_techset == assetType || xasset_material == assetType || xasset_computeshaderset == assetType)
-//    {
-//        ALOG("UNLOAD INFO %u name: %s", (uint32_t)assetType, *(char**)header);
-//    }
-//
-//    MDT_ORIGINAL(DB_FreeXAssetHeader_hook_2, (assetType, header));
-//}
+MDT_Define_FASTCALL(REBASE(0x14DA3A0), DB_FreeXAssetHeader_hook_2, void, (uint8_t assetType, uint64_t header))
+{
+    // ALOG("UNLOAD INFO %u", (uint32_t)assetType);
+    if (xasset_techset == assetType || xasset_material == assetType || xasset_computeshaderset == assetType)
+    {
+        ALOG("UNLOAD INFO %u name: %s", (uint32_t)assetType, *(char**)header);
+    }
+
+    MDT_ORIGINAL(DB_FreeXAssetHeader_hook_2, (assetType, header));
+}
 
 MDT_Define_FASTCALL(REBASE(0x1F009E0), Live_SystemInfo_Hook, bool, (int controllerIndex, int infoType, char* outputString, const int outputLen))
 {
@@ -1549,6 +1549,9 @@ void add_prehooks()
     MDT_Activate(LiveStats_AreStatsDeltasValid_hook);
     MDT_Activate(hksI_openlib_hook);
     MDT_Activate(EveryFrameHook);
+
+    // MDT_Activate(R_UpdateVertexDecl_hook);
+    // MDT_Activate(DB_FreeXAssetHeader_hook_2);
 
     // testing stuff
 #if BADWORD_BYPASS
@@ -1651,6 +1654,10 @@ void add_hooks()
     Dvar_SetFromStringByName("ui_error_callstack_ship", "1", true);
     Dvar_SetFromStringByName("loot_enabled", "1", true);
     Dvar_SetFromStringByName("ui_allLootUnlocked", "1", true);
+
+    // enable text chat
+    // Dvar_SetFromStringByName("chatClientEnabled", "1");
+    // chgmem<uint8_t>(REBASE(0x20E39BC + 3), 1);
 
 #if DWINVENTORY_UNLOCK_ALL
     Dvar_SetFromStringByName("loot_unlockUnreleasedLoot", "1", true);
