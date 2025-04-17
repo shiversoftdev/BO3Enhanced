@@ -1,5 +1,6 @@
 #include "framework.h"
 #include "scePadEnhancements.h"
+#include "hks.h"
 #include <intrin.h>
 
 // reimplemented, inlined on msstore build
@@ -137,9 +138,69 @@ MDT_Define_FASTCALL(REBASE(0xc23af0), GPad_ResetLightbarColor_Hook, void, ())
         scePadResetLightBar(scePadHandle);
 }
 
+int lastLuaGamepadIndex = 0;
+int lastCLGetKeyBindingInternalIndex = 0;
+
+MDT_Define_FASTCALL(REBASE(0x13f21f0), CL_GetKeyBindingInternal_Hook, int, (int localClientNum, char* command, char** keyNames, int gamePadOnly, int bindNum))
+{
+    lastCLGetKeyBindingInternalIndex = localClientNum;
+    return MDT_ORIGINAL(CL_GetKeyBindingInternal_Hook, (localClientNum, command, keyNames, gamePadOnly, bindNum));
+}
+
+MDT_Define_FASTCALL(REBASE(0x13ec5e0), Key_KeynumToString_Hook, const char *, (int localClientNum, int keynum, bool translate))
+{
+    const char* r = MDT_ORIGINAL(Key_KeynumToString_Hook, (localClientNum, keynum, translate));
+    keyNumToNameMapping_t* keyNumberToName = (keyNumToNameMapping_t*)REBASE(0x30f80d0);
+    // check to see if the resulting string is from the keynum->name lookup table
+    for (int i = 0; i < 16; i++) {
+        if (r == keyNumberToName[i].keyname_xenon) {
+            //ALOG("LOCALCLIENT %i KEYNUM %i RESULT: %s\n", localClientNum, keynum, r);
+            // get the scePad handle from the local client index
+            int controllerIndex = Com_LocalClient_GetControllerIndex(localClientNum);
+            // localClientNum can often be optimised out of calls to this function so we have to rebuild it
+            if (controllerIndex == -1) {
+                uint64_t returnAddy = (uint64_t)_ReturnAddress() - REBASE(0);
+                //ALOG("Invalid local client num, return addr %x\n", returnAddy);
+                if (returnAddy == 0x13f2435) // CL_GetKeyBindingInternal
+                    controllerIndex = lastCLGetKeyBindingInternalIndex;
+                else // get the controller index from the last Lua function
+                    controllerIndex = lastLuaGamepadIndex;
+            }
+            int scePad = ControllerIndexToScePadHandle(controllerIndex);
+            // if we have a scePad handle it's a PS4 controller so we should give the PS4 result
+            if (scePad != -1) {
+                //ALOG("TRANSLATED TO %s FOR SCEPAD HANDLE %08x\n", keyNumberToName[i].keyname_ps3, scePad);
+                return keyNumberToName[i].keyname_ps3;
+            }
+            break;
+        }
+    }
+    return r;
+}
+
+MDT_Define_FASTCALL(REBASE(0x20fb350), Lua_CoD_LuaCall_GamepadType_Hook, int, (lua_State* luaVM))
+{
+    // get the controller index from Lua argument 1
+    int controllerIndex = int(lua_tonumber(luaVM, 1));
+    lastLuaGamepadIndex = controllerIndex;
+    // try to get the scePad handle for the controller, if we have one then it's a PS4 pad
+    int scePad = ControllerIndexToScePadHandle(controllerIndex);
+    if (scePad != -1) {
+        //printf("Index %i is scePad %08x\n", controllerIndex, scePad);
+        lua_pushinteger(luaVM, 0); // GAMEPAD_TYPE_ORBIS
+    } else {
+        //printf("Index %i is XInput\n", controllerIndex);
+        lua_pushinteger(luaVM, 1); // GAMEPAD_TYPE_DURANGO
+    }
+    return 1;
+}
+
 void apply_scePad_enhancements()
 {
     MDT_Activate(GPad_SetLightbarColor_Hook);
     MDT_Activate(GPad_ResetLightbarColor_Hook);
     MDT_Activate(CScrCmd_SetAllControllersLightbarColor_Hook);
+    MDT_Activate(Key_KeynumToString_Hook);
+    MDT_Activate(Lua_CoD_LuaCall_GamepadType_Hook);
+    MDT_Activate(CL_GetKeyBindingInternal_Hook);
 }

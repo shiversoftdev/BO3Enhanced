@@ -27,6 +27,13 @@ typedef struct _ScePadLightBarState {
     uint8_t unk;
 } ScePadLightBarState;
 
+typedef struct _keyNumToNameMapping_t {
+    int keynum;
+    const char* keyname_default;
+    const char* keyname_xenon;
+    const char* keyname_ps3;
+} keyNumToNameMapping_t;
+
 typedef bool (*scePadSetLightBar_t)(int32_t handle, ScePadLightBarState* state);
 typedef bool (*scePadResetLightBar_t)(int32_t handle);
 
