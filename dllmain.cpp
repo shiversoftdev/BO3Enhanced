@@ -1653,13 +1653,13 @@ void add_hooks()
 
     Dvar_SetFromStringByName("ui_error_callstack_ship", "1", true);
     Dvar_SetFromStringByName("loot_enabled", "1", true);
-    Dvar_SetFromStringByName("ui_allLootUnlocked", "1", true);
 
     // enable text chat
     // Dvar_SetFromStringByName("chatClientEnabled", "1");
     // chgmem<uint8_t>(REBASE(0x20E39BC + 3), 1);
 
 #if DWINVENTORY_UNLOCK_ALL
+    Dvar_SetFromStringByName("ui_allLootUnlocked", "1", true);
     Dvar_SetFromStringByName("loot_unlockUnreleasedLoot", "1", true);
 #endif
 
