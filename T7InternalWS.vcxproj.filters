@@ -57,6 +57,9 @@
     <ClInclude Include="scePadEnhancements.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="linux_helper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -90,6 +93,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="scePadEnhancements.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="linux_helper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

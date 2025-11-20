@@ -4,6 +4,7 @@
 #include "bdAuthXB1toSteam.h"
 #include "steamugc.h"
 #include "security.h"
+#include "linux_helper.h"
 #include <unordered_map>
 #include <intrin.h>
 #include <direct.h>
@@ -107,6 +108,9 @@ dwInstantMsgSteamPacket instantPacket = { 0 };
 uint64_t lastFriendsUpdateTime = 0;
 void LiveFriends_Update_hook(); // forward declare
 
+// notify the user that Linux isn't quite supported yet
+bool show_linux_msg = false;
+
 // we run this every frame in the game thread
 void steam_dispatch_every_frame() 
 {
@@ -132,6 +136,12 @@ void steam_dispatch_every_frame()
 	{
 		LiveFriends_Update_hook();
 		lastFriendsUpdateTime = currentTime;
+	}
+
+	if (show_linux_msg)
+	{
+		show_linux_msg = false;
+		Com_Error(ERROR_UI, "Wine support is experimental in BO3Enhanced. Online play does not currently work, please don't file an issue report.");
 	}
 
 	if (g_needsUpdatePrompt)
@@ -824,6 +834,12 @@ void init_steamapi()
 	if (SteamAPI_InitEx(&m) != k_ESteamAPIInitResult_OK) {
 		ALOG("Steam API Init failed: %s", m);
 		gSteamInit = false;
+		// NOTE(Emma): we need Steam to be functional on Linux as the GDK is generally unavailable -- our hooks are mandatory
+		if (is_on_linux())
+		{
+			MessageBoxA(NULL, "Steam is required to play Black Ops 3.\nPlease make sure Steam is open and running.", "BO3Enhanced", 0);
+			ExitProcess(0);
+		}
 		return;
 	}
 	ALOG("Steam initialised!");
@@ -841,6 +857,12 @@ void init_steamapi()
 	MDT_Activate(XalUserGetId_hook);
 	MDT_Activate(XalUserGetGamertag_hook);
 	MDT_Activate(XGameSaveFilesGetFolderWithUiResult_hook);
+
+	// activate linux hooks
+	if (is_on_linux()) {
+		show_linux_msg = true;
+		do_linux_hooks();
+	}
 
 	// activate hooks for achievements
 	MDT_Activate(Live_AwardAchievement_Hook);

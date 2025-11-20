@@ -64,6 +64,7 @@
     <ClInclude Include="callspoof.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="hks.h" />
+    <ClInclude Include="linux_helper.h" />
     <ClInclude Include="MemoryModule.h" />
     <ClInclude Include="pe.h" />
     <ClInclude Include="PicoSHA2.h" />
@@ -79,6 +80,7 @@
     <ClCompile Include="bdAuthXB1toSteam.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="hks.cpp" />
+    <ClCompile Include="linux_helper.cpp" />
     <ClCompile Include="MemoryModule.c" />
     <ClCompile Include="rizz.cpp" />
     <ClCompile Include="scePadEnhancements.cpp" />

@@ -7,6 +7,7 @@
 #include "pe.h"
 #include "MemoryModule.h"
 #include "scePadEnhancements.h"
+#include "linux_helper.h"
 
 #if ENABLE_STEAMAPI
 #include "steam.h"
@@ -1471,7 +1472,10 @@ MDT_Define_FASTCALL(REBASE(0x1F009E0), Live_SystemInfo_Hook, bool, (int controll
         return MDT_ORIGINAL(Live_SystemInfo_Hook, (controllerIndex, infoType, outputString, outputLen));
     }
 
-    strcpy_s(outputString, outputLen, VERSION_STRING);
+    if (is_on_linux())
+        snprintf(outputString, outputLen, "%s (Wine)", VERSION_STRING);
+    else
+        strcpy_s(outputString, outputLen, VERSION_STRING);
     return true;
 }
 
